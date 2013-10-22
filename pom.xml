@@ -9,21 +9,13 @@
     <name>acme-integration-tests</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <camel-version>2.11.1</camel-version>
-        <junit-version>4.11</junit-version>
-        <cxf-version>2.7.4</cxf-version>
-        <soaunit-version>1.0.1</soaunit-version>
+        <soaunit-version>1.1.0</soaunit-version>
     </properties>
     <dependencies>
         <dependency>
           <groupId>nz.ac.auckland.integration.testing</groupId>
           <artifactId>soaunit</artifactId>
           <version>${soaunit-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit-version}</version>
         </dependency>
     </dependencies>
     <build>
