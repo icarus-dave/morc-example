@@ -8,7 +8,7 @@
     <!--
         This file just sets up all of the CXF endpoints that the Camel 'ESB' will use
     -->
-    <bean id="simpleSecurityValidator" class="com.acme.integration.tests.fakeesb.SecurityValidator">
+    <bean id="simpleSecurityValidator" class="com.acme.integration.tests.SecurityValidator">
         <property name="username" value="user"/>
         <property name="password" value="pass"/>
     </bean>

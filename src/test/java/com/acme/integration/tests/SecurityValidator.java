@@ -1,4 +1,4 @@
-package com.acme.integration.tests.fakeesb;
+package com.acme.integration.tests;
 
 import org.apache.ws.security.WSSecurityException;
 import org.apache.ws.security.handler.RequestData;

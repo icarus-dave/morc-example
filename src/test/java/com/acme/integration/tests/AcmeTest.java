@@ -1,16 +1,15 @@
 package com.acme.integration.tests;
 
-import com.acme.integration.tests.fakeesb.FakeESB;
-
 import nz.ac.auckland.integration.testing.OrchestratedTestBuilder;
 import nz.ac.auckland.integration.testing.expectation.MockExpectation;
+import org.apache.camel.Exchange;
+import org.apache.camel.Processor;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.processor.aggregate.AggregationStrategy;
 
-/**
- * A JUNIT Parameterized Test that executes each test specification as a separate test
- * - this bootstrap code is expected to be reduced further in upcoming releases
- */
 public class AcmeTest extends OrchestratedTestBuilder {
 
+    //Each of the syncTest or asyncTest calls creates a new JUnit test
     public static void configure() {
         //Sends a request to pingService and validates the response
         syncTest("cxf:http://localhost:8090/services/pingService", "Simple WS PING test")
@@ -101,26 +100,85 @@ public class AcmeTest extends OrchestratedTestBuilder {
                         .expectedBody(xml("<CanonicalField>foo</CanonicalField>")));
     }
 
-    private FakeESB esb;
+    /**
+     * If you're testing external routes (i.e. an application server service bus) then this wouldn't be here
+     * - this just sets up a 'fake' Camel ESB.
+     */
+    @Override
+    public RouteBuilder createRouteBuilder() {
+        return new RouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+                from("direct:pingServiceResponse")
+                        .setBody(constant("<ns:pingResponse xmlns:ns=\"urn:com:acme:integration:wsdl:pingservice\">" +
+                                "<response>PONG</response>" +
+                                "</ns:pingResponse>"));
 
-    public AcmeTest() throws Exception {
-        //This is to set up a magical ESB (you won't normally need to do this)
-        esb = new FakeESB();
+                from("cxf:bean:pingService")
+                    .to("direct:pingServiceResponse");
+
+                from("cxf:bean:securePingService")
+                    .to("direct:pingServiceResponse");
+
+                from("cxf:bean:pingServiceProxy")
+                    .to("direct:pingServiceProxy");
+
+                from("direct:pingServiceProxy")
+                    //do some quick validation to show what happens on error
+                    .process(new Processor() {
+                        @Override
+                        public void process(Exchange exchange) throws Exception {
+                            //a poor man's attempt at validation
+                            if (!exchange.getIn().getBody(String.class).contains("PING"))
+                                throw new Exception("INVALID BODY");
+                        }
+                    })
+                    //send this through to the 'target' system
+                    .to("cxf:http://localhost:9090/services/targetWS?dataFormat=PAYLOAD&wsdlURL=PingService.wsdl");
+
+                from("cxf:bean:pingServiceMultiProxy")
+                        .multicast(new AggregationStrategy() {
+                            @Override
+                            public Exchange aggregate(Exchange oldExchange, Exchange newExchange) {
+                                return newExchange;
+                            }
+                        }).stopOnException()
+                        .to("cxf:http://localhost:9090/services/targetWS?dataFormat=PAYLOAD&wsdlURL=PingService.wsdl",
+                            "cxf:http://localhost:9091/services/anotherTargetWS?dataFormat=PAYLOAD&wsdlURL=PingService.wsdl");
+
+                //parallel processing will mean this can happen in any order
+                from("cxf:bean:pingServiceMultiProxyUnordered")
+                    .multicast(new AggregationStrategy() {
+                        @Override
+                        public Exchange aggregate(Exchange oldExchange, Exchange newExchange) {
+                            return newExchange;
+                        }
+                    })
+                    .parallelProcessing()
+                    .to("direct:targetWSSlowDown",
+                    "cxf:http://localhost:9091/services/anotherTargetWS?dataFormat=PAYLOAD&wsdlURL=PingService.wsdl");
+
+                //ensure they arrive out of order by delaying the first one
+                from("direct:targetWSSlowDown")
+                        .delay(5000)
+                        .to("cxf:http://localhost:9090/services/targetWS?dataFormat=PAYLOAD&wsdlURL=PingService.wsdl");
+
+                //The JSON Service is the easiest :)
+                from("jetty:http://localhost:8091/jsonPingService")
+                    .setBody(constant("{\"response\":\"PONG\"}"));
+
+                //Simple canonicalization service - the vm transport is like a JMS queue
+                from("vm:test.input")
+                        .setBody(constant("<CanonicalField>foo</CanonicalField>"))
+                        .to("vm:test.output");
+            }
+        };
     }
 
-    /*
-    The wizard behind the curtains - sets up and tears down the integration processes for demonstration purposes
-    */
+    //setup some of the Spring details for the Camel 'fake' ESB
     @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        esb.start();
-    }
-
-    @Override
-    public void tearDown() throws Exception {
-        super.tearDown();
-        esb.stop();
+    public String[] getSpringContextPaths() {
+        return new String[] {"FakeESBContext.xml"};
     }
 
 }
