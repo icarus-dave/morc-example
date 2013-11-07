@@ -10,7 +10,8 @@ import org.apache.camel.processor.aggregate.AggregationStrategy;
 public class AcmeTest extends OrchestratedTestBuilder {
 
     //Each of the syncTest or asyncTest calls creates a new JUnit test
-    public static void configure() {
+    @Override
+    public void configure() {
         //Sends a request to pingService and validates the response
         syncTest("cxf:http://localhost:8090/services/pingService", "Simple WS PING test")
                 .requestBody(xml("<ns:pingRequest xmlns:ns=\"urn:com:acme:integration:wsdl:pingservice\">" +
@@ -98,6 +99,18 @@ public class AcmeTest extends OrchestratedTestBuilder {
                 .inputMessage(xml("<SystemField>foo</SystemField>"))
                 .addExpectation(asyncExpectation("vm:test.output")
                         .expectedBody(xml("<CanonicalField>foo</CanonicalField>")));
+
+        //A test to show how we can set up an expectation to throw an HTTP exception and then
+        //have it validated correctly
+        syncTest("jetty:http://localhost:8090/testJSONAPI", "Simple JSON API proxy failure test with body")
+                .requestBody(json("{\"hello\":\"home\"}"))
+                .exceptionResponseValidator(httpExceptionResponse()
+                        .responseBodyValidator(json("{\"error\":\"Should be hello:world\"}"))
+                        .statusCode(501).build())
+                .addExpectation(httpErrorExpectation("jetty:http://localhost:8090/targetJSONAPI")
+                        .expectedBody(json("{\"hello\":\"home\"}"))
+                        .responseBody(json("{\"error\":\"Should be hello:world\"}"))
+                        .statusCode(501));
     }
 
     /**
@@ -171,6 +184,11 @@ public class AcmeTest extends OrchestratedTestBuilder {
                 from("vm:test.input")
                         .setBody(constant("<CanonicalField>foo</CanonicalField>"))
                         .to("vm:test.output");
+
+                //a straight through proxy
+                from("jetty:http://localhost:8090/testJSONAPI")
+                        .to("jetty:http://localhost:8090/targetJSONAPI?bridgeEndpoint=true&throwExceptionOnFailure=false");
+
             }
         };
     }
