@@ -1,6 +1,6 @@
-soaunit-example
+morc-example
 ===============
 
-SOAUnit Example Project
+morc Example Project
 
-Run the tests with `mvn test`. See the page http://uoa-group-applications.github.io/soaunit/ for details.
+Run the tests with `mvn test`. See the page http://uoa-group-applications.github.io/morc/ for details.

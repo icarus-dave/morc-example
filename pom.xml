@@ -9,13 +9,13 @@
     <name>acme-integration-tests</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <soaunit-version>1.2.0</soaunit-version>
+        <morc-version>1.0.0</morc-version>
     </properties>
     <dependencies>
         <dependency>
-          <groupId>nz.ac.auckland.integration.testing</groupId>
-          <artifactId>soaunit</artifactId>
-          <version>${soaunit-version}</version>
+          <groupId>nz.ac.auckland.morc</groupId>
+          <artifactId>morc</artifactId>
+          <version>${morc-version}</version>
         </dependency>
     </dependencies>
     <build>
