@@ -9,13 +9,13 @@
     <name>acme-integration-tests</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <morc-version>1.0.0</morc-version>
+        <morc-version>1.1.0</morc-version>
     </properties>
     <dependencies>
         <dependency>
-          <groupId>nz.ac.auckland.morc</groupId>
-          <artifactId>morc</artifactId>
-          <version>${morc-version}</version>
+            <groupId>nz.ac.auckland.morc</groupId>
+            <artifactId>morc</artifactId>
+            <version>${morc-version}</version>
         </dependency>
     </dependencies>
     <build>
@@ -30,8 +30,11 @@
                 </configuration>
             </plugin>
             <plugin>
-              <artifactId>maven-surefire-plugin</artifactId>
-              <version>2.15</version>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.15</version>
+                <configuration>
+                    <forkCount>0</forkCount>
+                </configuration>
             </plugin>
         </plugins>
     </build>

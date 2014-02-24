@@ -7,10 +7,10 @@
             </pattern>
         </encoder>
     </appender>
-    <logger name="nz.ac.auckland.integration" additivity="false" level="trace">
+    <logger name="nz.ac.auckland.morc" additivity="false" level="debug">
         <appender-ref ref="consoleAppender"/>
     </logger>
-    <root level="info">
+    <root level="error">
         <appender-ref ref="consoleAppender"/>
     </root>
 </configuration>

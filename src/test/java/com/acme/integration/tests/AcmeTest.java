@@ -12,7 +12,7 @@ public class AcmeTest extends MorcTestBuilder {
     @Override
     public void configure() {
         //Sends a request to pingService and validates the response
-        syncTest("Simple WS PING test","cxf:http://localhost:8090/services/pingService")
+        syncTest("Simple WS PING test", "cxf:http://localhost:8090/services/pingService")
                 .requestBody(xml("<ns:pingRequest xmlns:ns=\"urn:com:acme:integration:wsdl:pingservice\">" +
                         "<request>PING</request>" +
                         "</ns:pingRequest>"))
@@ -23,9 +23,9 @@ public class AcmeTest extends MorcTestBuilder {
         //Using WS-Security features of CXF (username/password) - note you need to specify the WSDL so
         //that CXF can grab the policy (it can be a remote reference if you wish)
         syncTest("Simple WS PING test with WS-Security",
-				"cxf://http://localhost:8090/services/securePingService?wsdlURL=SecurePingService.wsdl&" +
-                "properties.ws-security.username=user" +
-                "&properties.ws-security.password=pass")
+                "cxf://http://localhost:8090/services/securePingService?wsdlURL=SecurePingService.wsdl&" +
+                        "properties.ws-security.username=user" +
+                        "&properties.ws-security.password=pass")
                 .requestBody(xml("<ns:pingRequest xmlns:ns=\"urn:com:acme:integration:wsdl:pingservice\">" +
                         "<request>PING</request>" +
                         "</ns:pingRequest>"))
@@ -35,17 +35,17 @@ public class AcmeTest extends MorcTestBuilder {
 
         //Using classpath resources instead
         syncTest("Simple WS PING test with local resources",
-				"cxf:http://localhost:8090/services/pingService")
+                "cxf:http://localhost:8090/services/pingService")
                 .requestBody(xml(classpath("/data/pingRequest1.xml")))
                 .expectedResponseBody(xml(classpath("/data/pingResponse1.xml")));
 
         //Using a JSON service
-        syncTest("Simple JSON PING","http://localhost:8091/jsonPingService")
+        syncTest("Simple JSON PING", "http://localhost:8091/jsonPingService")
                 .requestBody(json("{\"request\":\"PING\"}"))
                 .expectedResponseBody(json("{\"response\":\"PONG\"}"));
 
         //Showing how expectations can create mock endpoints to validate the incoming request and provide a canned response
-        syncTest("WS PING test with mock service expectation","cxf:http://localhost:8090/services/pingServiceProxy")
+        syncTest("WS PING test with mock service expectation", "cxf:http://localhost:8090/services/pingServiceProxy")
                 .requestBody(xml(classpath("/data/pingRequest1.xml")))
                 .expectedResponseBody(xml(classpath("/data/pingResponse1.xml")))
                 .addExpectation(syncExpectation("cxf:http://localhost:9090/services/targetWS?wsdlURL=PingService.wsdl")
@@ -53,22 +53,19 @@ public class AcmeTest extends MorcTestBuilder {
                         .responseBody(xml(classpath("/data/pingResponse1.xml"))));
 
         //Showing how we can string together expectations for multiple requests to the same (or different) endpoints
-        syncTest("WS PING test with multiple mock service expectations",
-				"cxf:http://localhost:8090/services/pingServiceMultiProxy")
+        syncTest("WS PING test with multiple mock service expectations", "cxf:http://localhost:8090/services/pingServiceMultiProxy")
                 .requestBody(xml(classpath("/data/pingRequest1.xml")))
                 .expectedResponseBody(xml(classpath("/data/pingResponse1.xml")))
-                .addExpectation(syncExpectation("cxf:http://localhost:9090/services/targetWS?wsdlURL=PingService" +
-                        ".wsdl")
+                .addExpectation(syncExpectation("cxf:http://localhost:9090/services/targetWS?wsdlURL=PingService.wsdl")
                         .expectedBody(xml(classpath("/data/pingRequest1.xml")))
                         .responseBody(xml(classpath("/data/pingResponse1.xml"))))
-                .addExpectation(syncExpectation
-                        ("cxf:http://localhost:9091/services/anotherTargetWS?wsdlURL=PingService.wsdl")
+                .addExpectation(syncExpectation("cxf:http://localhost:9091/services/anotherTargetWS?wsdlURL=PingService.wsdl")
                         .expectedBody(xml(classpath("/data/pingRequest1.xml")))
                         .responseBody(xml(classpath("/data/pingResponse1.xml"))));
 
         //The same as above except showing support for weakly ordered expectations (i.e. multi-threaded call-outs)
         syncTest("WS PING test with multiple unordered mock service expectations",
-				"cxf:http://localhost:8090/services/pingServiceMultiProxyUnordered")
+                "cxf:http://localhost:8090/services/pingServiceMultiProxyUnordered")
                 .requestBody(xml(classpath("/data/pingRequest1.xml")))
                 .expectedResponseBody(xml(classpath("/data/pingResponse1.xml")))
                 .addExpectation(syncExpectation("cxf:http://localhost:9090/services/targetWS?wsdlURL=PingService.wsdl")
@@ -85,27 +82,28 @@ public class AcmeTest extends MorcTestBuilder {
          ensure the message doesn't arrive at the endpoint.
          */
         syncTest("Test invalid message doesn't arrive at the endpoint and returns exception",
-				"cxf:http://localhost:8090/services/pingServiceProxy")
+                "cxf:http://localhost:8090/services/pingServiceProxy")
                 .requestBody(xml("<ns:pingRequest xmlns:ns=\"urn:com:acme:integration:wsdl:pingservice\">" +
-                                                    "<request>PONG</request>" +
-                                                 "</ns:pingRequest>"))
-                .expectsExceptionResponse()
+                        "<request>PONG</request>" +
+                        "</ns:pingRequest>"))
+                .expectsException()
                 .addExpectation(unreceivedExpectation("cxf:http://localhost:9090/services/targetWS?wsdlURL=PingService.wsdl"));
 
         //Send a message to a vm destination (like a JMS queue) to show asynchronous messaging with transformation
-        asyncTest("Simple Asynchronous Canonicalizer Comparison","vm:test.input")
+        asyncTest("Simple Asynchronous Canonicalizer Comparison", "vm:test.input")
                 .inputMessage(xml("<SystemField>foo</SystemField>"))
                 .addExpectation(asyncExpectation("vm:test.output")
                         .expectedBody(xml("<CanonicalField>foo</CanonicalField>")));
 
         //A test to show how we can set up an expectation to throw an HTTP exception and then
         //have it validated correctly
-        syncTest("Simple JSON API proxy failure test with body","jetty:http://localhost:8090/testJSONAPI")
+        syncTest("Simple JSON API proxy failure test with body", "jetty:http://localhost:8091/testJSONAPI")
                 .requestBody(json("{\"hello\":\"home\"}"))
-                .exceptionResponseValidator(httpExceptionResponse()
-                        .responseBodyValidator(json("{\"error\":\"Should be hello:world\"}"))
+                .expectsException()
+                .expectedResponse(httpExceptionResponse()
+                        .responseBody(json("{\"error\":\"Should be hello:world\"}"))
                         .statusCode(501).build())
-                .addExpectation(httpErrorExpectation("jetty:http://localhost:8090/targetJSONAPI")
+                .addExpectation(httpErrorExpectation("jetty:http://localhost:8091/targetJSONAPI")
                         .expectedBody(json("{\"hello\":\"home\"}"))
                         .responseBody(json("{\"error\":\"Should be hello:world\"}"))
                         .statusCode(501));
@@ -126,26 +124,26 @@ public class AcmeTest extends MorcTestBuilder {
                                 "</ns:pingResponse>"));
 
                 from("cxf:bean:pingService")
-                    .to("direct:pingServiceResponse");
+                        .to("direct:pingServiceResponse");
 
                 from("cxf:bean:securePingService")
-                    .to("direct:pingServiceResponse");
+                        .to("direct:pingServiceResponse");
 
                 from("cxf:bean:pingServiceProxy")
-                    .to("direct:pingServiceProxy");
+                        .to("direct:pingServiceProxy");
 
                 from("direct:pingServiceProxy")
-                    //do some quick validation to show what happens on error
-                    .process(new Processor() {
-                        @Override
-                        public void process(Exchange exchange) throws Exception {
-                            //a poor man's attempt at validation
-                            if (!exchange.getIn().getBody(String.class).contains("PING"))
-                                throw new Exception("INVALID BODY");
-                        }
-                    })
-                    //send this through to the 'target' system
-                    .to("cxf:http://localhost:9090/services/targetWS?dataFormat=PAYLOAD&wsdlURL=PingService.wsdl");
+                        //do some quick validation to show what happens on error
+                        .process(new Processor() {
+                            @Override
+                            public void process(Exchange exchange) throws Exception {
+                                //a poor man's attempt at validation
+                                if (!exchange.getIn().getBody(String.class).contains("PING"))
+                                    throw new Exception("INVALID BODY");
+                            }
+                        })
+                                //send this through to the 'target' system
+                        .to("cxf:http://localhost:9090/services/targetWS?dataFormat=PAYLOAD&wsdlURL=PingService.wsdl");
 
                 from("cxf:bean:pingServiceMultiProxy")
                         .multicast(new AggregationStrategy() {
@@ -155,19 +153,19 @@ public class AcmeTest extends MorcTestBuilder {
                             }
                         }).stopOnException()
                         .to("cxf:http://localhost:9090/services/targetWS?dataFormat=PAYLOAD&wsdlURL=PingService.wsdl",
-                            "cxf:http://localhost:9091/services/anotherTargetWS?dataFormat=PAYLOAD&wsdlURL=PingService.wsdl");
+                                "cxf:http://localhost:9091/services/anotherTargetWS?dataFormat=PAYLOAD&wsdlURL=PingService.wsdl");
 
                 //parallel processing will mean this can happen in any order
                 from("cxf:bean:pingServiceMultiProxyUnordered")
-                    .multicast(new AggregationStrategy() {
-                        @Override
-                        public Exchange aggregate(Exchange oldExchange, Exchange newExchange) {
-                            return newExchange;
-                        }
-                    })
-                    .parallelProcessing()
-                    .to("direct:targetWSSlowDown",
-                    "cxf:http://localhost:9091/services/anotherTargetWS?dataFormat=PAYLOAD&wsdlURL=PingService.wsdl");
+                        .multicast(new AggregationStrategy() {
+                            @Override
+                            public Exchange aggregate(Exchange oldExchange, Exchange newExchange) {
+                                return newExchange;
+                            }
+                        })
+                        .parallelProcessing()
+                        .to("direct:targetWSSlowDown",
+                                "cxf:http://localhost:9091/services/anotherTargetWS?dataFormat=PAYLOAD&wsdlURL=PingService.wsdl");
 
                 //ensure they arrive out of order by delaying the first one
                 from("direct:targetWSSlowDown")
@@ -176,7 +174,7 @@ public class AcmeTest extends MorcTestBuilder {
 
                 //The JSON Service is the easiest :)
                 from("jetty:http://localhost:8091/jsonPingService")
-                    .setBody(constant("{\"response\":\"PONG\"}"));
+                        .setBody(constant("{\"response\":\"PONG\"}"));
 
                 //Simple canonicalization service - the vm transport is like a JMS queue
                 from("vm:test.input")
@@ -184,8 +182,8 @@ public class AcmeTest extends MorcTestBuilder {
                         .to("vm:test.output");
 
                 //a straight through proxy
-                from("jetty:http://localhost:8090/testJSONAPI")
-                        .to("jetty:http://localhost:8090/targetJSONAPI?bridgeEndpoint=true&throwExceptionOnFailure=false");
+                from("jetty:http://localhost:8091/testJSONAPI")
+                        .to("jetty:http://localhost:8091/targetJSONAPI?bridgeEndpoint=true&throwExceptionOnFailure=false");
 
             }
         };
@@ -194,7 +192,7 @@ public class AcmeTest extends MorcTestBuilder {
     //setup some of the Spring details for the Camel 'fake' ESB
     @Override
     public String[] getSpringContextPaths() {
-        return new String[] {"FakeESBContext.xml"};
+        return new String[]{"FakeESBContext.xml"};
     }
 
 }
